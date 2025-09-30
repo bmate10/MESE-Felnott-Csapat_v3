@@ -1,0 +1,5 @@
+{
+  "name": "Tennis Team Tracker",
+  "description": "An application to track a tennis team's match schedule, player availability, lineups, and results for each season.",
+  "requestFramePermissions": []
+}

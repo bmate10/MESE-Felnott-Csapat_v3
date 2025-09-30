@@ -5,8 +5,8 @@ import { getFirestore, collection, onSnapshot, query, orderBy, addDoc, doc, upda
 
 // --- TYPES ---
 interface Player { id: string; name: string; rank: number; }
-const AvailabilityOptions = ['Yes', 'No', 'If Needed'] as const;
-type AvailabilityStatus = typeof AvailabilityOptions[number];
+type AvailabilityStatus = 'Yes' | 'No' | 'If Needed';
+const AvailabilityOptions: AvailabilityStatus[] = ['Yes', 'No', 'If Needed'];
 interface DoublesPair { player1: string | null; player2: string | null; }
 interface Lineup { singles: (string | null)[]; doubles: DoublesPair[]; }
 interface MatchResult { ourScore: number | null; opponentScore: number | null; }

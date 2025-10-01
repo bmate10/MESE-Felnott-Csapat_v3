@@ -274,7 +274,7 @@ const MatchesPage: React.FC = () => {
 };
 
 const DashboardPage: React.FC = () => {
-    const { matches, loading, year } = useLeague();
+    const { matches, loading, year, players } = useLeague();
     const now = new Date();
     const upcomingMatches = matches.filter(match => match.date.toDate() > now).sort((a, b) => a.date.toMillis() - b.date.toMillis());
     const pastMatches = matches.filter(match => match.date.toDate() <= now && match.result.ourScore !== null).sort((a, b) => b.date.toMillis() - a.date.toMillis());
@@ -284,7 +284,71 @@ const DashboardPage: React.FC = () => {
     const season = now.getMonth() >= 1 && now.getMonth() <= 6 ? 'Spring' : 'Fall';
     if (loading) return <Spinner />;
     const StatCard: React.FC<{ title: string; value: string | number; description?: string }> = ({ title, value, description }) => ( <Card><h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3><p className="mt-1 text-3xl font-semibold text-gray-900">{value}</p>{description && <p className="text-sm text-gray-500">{description}</p>}</Card> );
-    const MatchListItem: React.FC<{ match: Match }> = ({ match }) => ( <li className="flex justify-between items-center py-3 border-b border-gray-200 last:border-b-0"><div><p className="font-semibold">{match.opponent}</p><p className="text-sm text-gray-500">{match.location}</p></div><p className="text-sm text-gray-600">{match.date.toDate().toLocaleDateString()}</p></li> );
+    
+    const MatchListItem: React.FC<{ match: Match }> = ({ match }) => {
+        const [isExpanded, setIsExpanded] = useState(false);
+        const getPlayerName = useCallback((playerId: string | null): React.ReactNode => {
+            if (!playerId) return <span className="text-gray-400 italic">Empty</span>;
+            const player = players.find(p => p.id === playerId);
+            return player ? player.name : <span className="text-red-500">Unknown</span>;
+        }, [players]);
+    
+        const hasLineup = useMemo(() =>
+            match.lineup.singles.some(p => p !== null) ||
+            match.lineup.doubles.some(p => p.player1 !== null || p.player2 !== null),
+        [match.lineup]);
+    
+        return (
+            <li className="py-4 border-b border-gray-200 last:border-b-0">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <p className="font-semibold text-gray-900">{match.opponent}</p>
+                        <p className="text-sm text-gray-500">{match.location} &middot; {match.date.toDate().toLocaleDateString()}</p>
+                    </div>
+                    {hasLineup && (
+                        <Button variant="secondary" size="sm" onClick={() => setIsExpanded(!isExpanded)}>
+                            {isExpanded ? 'Hide' : 'Lineup'}
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 ml-2 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </Button>
+                    )}
+                </div>
+                {isExpanded && hasLineup && (
+                    <div className="mt-4 pl-2 pt-4 border-t border-gray-100">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">Selected Lineup</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                            <div>
+                                <h5 className="font-medium text-gray-800 mb-1">Singles</h5>
+                                <ol className="list-decimal list-inside space-y-1">
+                                    {match.lineup.singles.map((playerId, index) => (
+                                        <li key={`s-${index}`} className="ml-2">
+                                            {getPlayerName(playerId)}
+                                        </li>
+                                    ))}
+                                </ol>
+                            </div>
+                            <div>
+                                <h5 className="font-medium text-gray-800 mb-1">Doubles</h5>
+                                <div className="space-y-2">
+                                    {match.lineup.doubles.map((pair, index) => (
+                                        <div key={`d-${index}`}>
+                                            <p className="font-semibold text-gray-600">D{index + 1}</p>
+                                            <div className="pl-4 text-gray-700">
+                                                <p>{getPlayerName(pair.player1)}</p>
+                                                <p>{getPlayerName(pair.player2)}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </li>
+        );
+    };
+
     return (
         <div className="space-y-8">
             <header><h1 className="text-3xl font-bold text-gray-900">Dashboard</h1><p className="text-lg text-gray-600">{year} {season} Season</p></header>
